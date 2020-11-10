@@ -7,7 +7,7 @@ namespace RBTreeLab.Interfaces
     {
         void Add(TKey key);
         void Delete(TKey key);
-        NodeColor Find(TKey key);
+        NodeColor? Find(TKey key);
         TKey Min();
         TKey Max();
         TKey FindNext(TKey key);

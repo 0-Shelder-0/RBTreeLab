@@ -51,9 +51,9 @@ namespace RBTreeLab
             throw new System.NotImplementedException();
         }
 
-        public NodeColor Find(TKey key)
+        public NodeColor? Find(TKey key)
         {
-            throw new System.NotImplementedException();
+            return Search(key)?.Color;
         }
 
         public TKey Min()
@@ -192,6 +192,20 @@ namespace RBTreeLab
             {
                 rightLeft.Parent = node;
             }
+        }
+
+        private TreeNode<TKey> Search(TKey key)
+        {
+            var current = _root;
+            
+            while (current != null && current.Key.CompareTo(key) != 0)
+            {
+                current = current.Key.CompareTo(key) > 0
+                              ? current.Left
+                              : current.Right;
+            }
+
+            return current;
         }
 
         IEnumerator IEnumerable.GetEnumerator()

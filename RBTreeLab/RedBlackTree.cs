@@ -6,13 +6,13 @@ using RBTreeLab.Interfaces;
 
 namespace RBTreeLab
 {
-    public class RebBlackTree<TKey> : IRedBlackTree<TKey> where TKey : IComparable
+    public class RedBlackTree<TKey> : IRedBlackTree<TKey> where TKey : IComparable
     {
         private TreeNode<TKey> _root;
 
-        public RebBlackTree() { }
+        public RedBlackTree() { }
 
-        public RebBlackTree(TKey key)
+        public RedBlackTree(TKey key)
         {
             _root = new TreeNode<TKey>(key, NodeColor.Black);
         }

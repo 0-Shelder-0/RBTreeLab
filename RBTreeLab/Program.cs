@@ -6,7 +6,7 @@ namespace RBTreeLab
     {
         private static void Main()
         {
-            var t = new RebBlackTree<int>();
+            var t = new RedBlackTree<int>();
             for (var i = 20; i > 0; i--)
             {
                 t.Add(i);

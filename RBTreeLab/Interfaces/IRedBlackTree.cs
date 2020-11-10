@@ -1,13 +1,16 @@
+using System;
+using System.Collections.Generic;
+
 namespace RBTreeLab.Interfaces
 {
-    public interface IRedBlackTree<T>
+    public interface IRedBlackTree<TKey> : IEnumerable<Tuple<TKey, NodeColor>> where TKey : IComparable
     {
-        void Add(T key);
-        void Delete(T key);
-        NodeColor Find(T key);
-        T Min();
-        T Max();
-        T FindNext(T key);
-        T FindPrev(T key);
+        void Add(TKey key);
+        void Delete(TKey key);
+        NodeColor Find(TKey key);
+        TKey Min();
+        TKey Max();
+        TKey FindNext(TKey key);
+        TKey FindPrev(TKey key);
     }
 }

@@ -58,12 +58,26 @@ namespace RBTreeLab
 
         public TKey Min()
         {
-            throw new System.NotImplementedException();
+            var node = new TreeNode<TKey>();
+            var current = _root;
+            while (current != null)
+            {
+                node = current;
+                current = current.Left;
+            }
+            return node.Key;
         }
 
         public TKey Max()
         {
-            throw new System.NotImplementedException();
+            var node = new TreeNode<TKey>();
+            var current = _root;
+            while (current != null)
+            {
+                node = current;
+                current = current.Right;
+            }
+            return node.Key;
         }
 
         public TKey FindNext(TKey key)

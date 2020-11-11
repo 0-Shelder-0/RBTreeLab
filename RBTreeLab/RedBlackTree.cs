@@ -51,6 +51,7 @@ namespace RBTreeLab
             throw new System.NotImplementedException();
         }
 
+
         public NodeColor? Find(TKey key)
         {
             return Search(key)?.Color;
@@ -82,12 +83,52 @@ namespace RBTreeLab
 
         public TKey FindNext(TKey key)
         {
-            throw new System.NotImplementedException();
+            var current = Search(key);
+            var right = current.Right;
+            var node = new TreeNode<TKey>();
+            
+            if (right == null)
+            {
+                node = current.Parent;
+                while (node.Key.CompareTo(current.Key) < 0)
+                {
+                    node = node.Parent;
+                }
+                return node.Key;
+            }
+            
+            while (right != null)
+            {
+                node = right;
+                right = right.Left;
+            }
+
+            return node.Key;
         }
 
         public TKey FindPrev(TKey key)
         {
-            throw new System.NotImplementedException();
+            var current = Search(key);
+            var left = current.Left;
+            var node = new TreeNode<TKey>();
+            
+            if (left == null)
+            {
+                node = current.Parent;
+                while (node.Key.CompareTo(current.Key) > 0)
+                {
+                    node = node.Parent;
+                }
+                return node.Key;
+            }
+            
+            while (left != null)
+            {
+                node = left;
+                left = left.Right;
+            }
+
+            return node.Key;
         }
 
         private void RestoringProperties(TreeNode<TKey> node)

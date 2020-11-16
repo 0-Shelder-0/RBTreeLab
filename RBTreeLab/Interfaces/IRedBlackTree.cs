@@ -12,5 +12,6 @@ namespace RBTreeLab.Interfaces
         TKey Max();
         TKey FindNext(TKey key);
         TKey FindPrev(TKey key);
+        void PrintTree();
     }
 }

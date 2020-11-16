@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using RBTreeLab.Interfaces;
 
 namespace RBTreeLab
@@ -129,6 +130,43 @@ namespace RBTreeLab
             }
 
             return node.Key;
+        }
+
+        public void PrintTree()
+        {
+            if (_root != null)
+            {
+                PrintSubtrees(new StringBuilder(), _root, true);
+            }
+        }
+
+        private void PrintSubtrees(StringBuilder indent, TreeNode<TKey> current, bool isTail)
+        {
+            if (current.Right != null)
+            {
+                PrintSubtrees(new StringBuilder().Append(indent).Append(isTail ? "│   " : "    "), current.Right, false);
+            }
+            
+            Console.Write(indent);
+            Console.Write(isTail ? "└── " : "┌── ");
+            
+            if (current.Color == NodeColor.Red)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(current.Key);
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.WriteLine(current.Key);
+                Console.ResetColor();
+            } // print current node
+
+            if (current.Left != null)
+            {
+                PrintSubtrees(new StringBuilder().Append(indent).Append(isTail ? "    " : "│   "), current.Left, true);
+            }
         }
 
         private void RestoringProperties(TreeNode<TKey> node)

@@ -90,7 +90,6 @@ namespace RBTreeLab
             {
                 Console.WriteLine("The tree does not have a vertex with such a key.");
             }
-            
         }
     }
 }

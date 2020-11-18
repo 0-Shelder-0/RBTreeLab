@@ -44,14 +44,30 @@ namespace RBTreeLab
             {
                 node.Right = newNode;
             }
-            RestoringProperties(newNode);
+            FixAdding(newNode);
         }
 
         public void Delete(TKey key)
         {
-            throw new System.NotImplementedException();
-        }
+            var current = Search(key);
+            if (current == null)
+            {
+                throw new KeyNotFoundException($"This key not found: {key}");
+            }
 
+            var countChildren = GetCountChildren(current);
+            TreeNode<TKey> nullNode;
+            var node = countChildren switch
+                       {
+                           0 => DeletingWithoutChildren(current, out nullNode),
+                           1 => DeletingWithChild(current, out nullNode),
+                           _ => DeletingWithChildren(current, out nullNode)
+                       };
+            if (nullNode != null)
+            {
+                FixDeleting(node, nullNode);
+            }
+        }
 
         public NodeColor? Find(TKey key)
         {
@@ -84,10 +100,14 @@ namespace RBTreeLab
 
         public TKey FindNext(TKey key)
         {
+            if (key.CompareTo(Max()) == 0)
+            {
+                throw new InvalidOperationException($"The current key: {key} is the max!");
+            }
+
             var current = Search(key);
             var right = current.Right;
             var node = new TreeNode<TKey>();
-            
             if (right == null)
             {
                 node = current.Parent;
@@ -97,22 +117,24 @@ namespace RBTreeLab
                 }
                 return node.Key;
             }
-            
             while (right != null)
             {
                 node = right;
                 right = right.Left;
             }
-
             return node.Key;
         }
 
         public TKey FindPrev(TKey key)
         {
+            if (key.CompareTo(Min()) == 0)
+            {
+                throw new InvalidOperationException($"The current key: {key} is the min!");
+            }
+
             var current = Search(key);
             var left = current.Left;
             var node = new TreeNode<TKey>();
-            
             if (left == null)
             {
                 node = current.Parent;
@@ -122,13 +144,11 @@ namespace RBTreeLab
                 }
                 return node.Key;
             }
-            
             while (left != null)
             {
                 node = left;
                 left = left.Right;
             }
-
             return node.Key;
         }
 
@@ -144,12 +164,14 @@ namespace RBTreeLab
         {
             if (current.Right != null)
             {
-                PrintSubtrees(new StringBuilder().Append(indent).Append(isTail ? "│   " : "    "), current.Right, false);
+                PrintSubtrees(new StringBuilder()
+                             .Append(indent)
+                             .Append(isTail ? "│   " : "    "), current.Right, false);
             }
-            
+
             Console.Write(indent);
             Console.Write(isTail ? "└── " : "┌── ");
-            
+
             if (current.Color == NodeColor.Red)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -165,89 +187,230 @@ namespace RBTreeLab
 
             if (current.Left != null)
             {
-                PrintSubtrees(new StringBuilder().Append(indent).Append(isTail ? "    " : "│   "), current.Left, true);
+                PrintSubtrees(new StringBuilder()
+                             .Append(indent)
+                             .Append(isTail ? "    " : "│   "), current.Left, true);
             }
         }
 
-        private void RestoringProperties(TreeNode<TKey> node)
+        private void FixAdding(TreeNode<TKey> node)
         {
             if (node == _root)
             {
                 node.Color = NodeColor.Black;
                 return;
             }
-            while (node.Parent != null && node.Parent.Color == NodeColor.Red)
+            while (node.Parent?.Color == NodeColor.Red)
             {
-                if (node.Parent.Parent.Left == node.Parent) //dad is left child
+                var grandFather = node.Parent.Parent;
+                var uncle = grandFather.Left == node.Parent
+                                ? grandFather.Right
+                                : grandFather.Left;
+                if (uncle?.Color == NodeColor.Red)
                 {
-                    node = node.Parent.Parent.Right != null
-                               ? Repaint(node, node.Parent.Parent.Right, node.Parent.Parent)
-                               : Rotate(node, node.Parent.Right, node.Parent.Parent, LeftRotate, RightRotate);
+                    node = RecoloringFix(node, uncle, grandFather);
                 }
                 else
                 {
-                    node = node.Parent.Parent.Left != null
-                               ? Repaint(node, node.Parent.Parent.Left, node.Parent.Parent)
-                               : Rotate(node, node.Parent.Left, node.Parent.Parent, RightRotate, LeftRotate);
+                    node = RotationFix(node, grandFather);
                 }
             }
             _root.Color = NodeColor.Black;
         }
 
-        private TreeNode<TKey> Repaint(TreeNode<TKey> node, TreeNode<TKey> uncle, TreeNode<TKey> grandfather)
+        private TreeNode<TKey> RecoloringFix(TreeNode<TKey> node, TreeNode<TKey> uncle, TreeNode<TKey> grandFather)
         {
-            if (uncle.Color == NodeColor.Red)
+            node.Parent.Color = NodeColor.Black;
+            uncle.Color = NodeColor.Black;
+            grandFather.Color = NodeColor.Red;
+            return grandFather;
+        }
+
+        private TreeNode<TKey> RotationFix(TreeNode<TKey> node, TreeNode<TKey> grandFather)
+        {
+            if (node.Parent == grandFather.Left && node == node.Parent.Right)
             {
-                node.Parent.Color = NodeColor.Black;
-                uncle.Color = NodeColor.Black;
-                grandfather.Color = NodeColor.Red;
+                LeftRotate(node.Parent);
+                node = node.Left;
+            }
+            else if (node.Parent == grandFather.Right && node == node.Parent.Left)
+            {
+                RightRotate(node.Parent);
+                node = node.Right;
+            }
+            node.Parent.Color = NodeColor.Black;
+            grandFather.Color = NodeColor.Red;
+            if (node.Parent.Left == node)
+            {
+                RightRotate(grandFather);
             }
             else
             {
-                node.Parent.Color = NodeColor.Black;
-                grandfather.Color = NodeColor.Red;
-                if (node.Parent.Left == node && grandfather.Left == node.Parent)
-                {
-                    RightRotate(grandfather);
-                }
-                else
-                {
-                    LeftRotate(grandfather);
-                }
+                LeftRotate(grandFather);
             }
-            return grandfather;
+            return grandFather;
         }
 
-        private TreeNode<TKey> Rotate(TreeNode<TKey> node,
-                                      TreeNode<TKey> child,
-                                      TreeNode<TKey> grandfather,
-                                      Action<TreeNode<TKey>> firstRotate,
-                                      Action<TreeNode<TKey>> secondRotate)
+        private TreeNode<TKey> DeletingWithoutChildren(TreeNode<TKey> node, out TreeNode<TKey> nullNode)
         {
-            if (child == node)
+            var parent = node.Parent;
+            nullNode = null;
+            if (node == _root)
             {
-                node = node.Parent;
-                firstRotate(node);
+                _root = null;
+                return null;
             }
-            node.Parent.Color = NodeColor.Black;
-            grandfather.Color = NodeColor.Red;
-            secondRotate(grandfather);
+            if (node.Color == NodeColor.Black && !node.IsNull)
+            {
+                var current = node;
+                node = new TreeNode<TKey> {Parent = node.Parent};
+                Change(parent, current, node);
+                nullNode = node;
+                return node;
+            }
+            Change(parent, node, null);
+            node.Parent = null;
+
             return node;
+        }
+
+        private void Change(TreeNode<TKey> parent, TreeNode<TKey> current, TreeNode<TKey> node)
+        {
+            if (parent?.Left == current)
+            {
+                parent.Left = node;
+            }
+            else if (parent?.Right != null)
+            {
+                parent.Right = node;
+            }
+        }
+
+        private TreeNode<TKey> DeletingWithChild(TreeNode<TKey> node, out TreeNode<TKey> nullNode)
+        {
+            var child = node.Left ?? node.Right;
+            (child.Key, node.Key) = (node.Key, child.Key);
+            nullNode = null;
+            DeletingWithoutChildren(child, out nullNode);
+            return child;
+        }
+
+        private TreeNode<TKey> DeletingWithChildren(TreeNode<TKey> node, out TreeNode<TKey> nullNode)
+        {
+            var next = node.Key.CompareTo(Max()) == 0 ? null : Search(FindNext(node.Key));
+            (node.Key, next.Key) = (next.Key, node.Key);
+            var countChildren = GetCountChildren(next);
+            nullNode = null;
+            node = countChildren == 0
+                       ? DeletingWithoutChildren(next, out nullNode)
+                       : DeletingWithChild(next, out nullNode);
+            return node;
+        }
+
+        private void FixDeleting(TreeNode<TKey> node, TreeNode<TKey> nullNode)
+        {
+            while (node.Parent != null && node.Color == NodeColor.Black)
+            {
+                if (node.Parent.Left == node)
+                {
+                    var brother = GetBrother(node);
+                    var rightChild = brother?.Right;
+                    var leftChild = brother?.Left;
+                    node = Fix(node, brother, leftChild, rightChild, LeftRotate, RightRotate);
+                }
+                else if (node.Parent != null)
+                {
+                    var brother = GetBrother(node);
+                    var rightChild = brother?.Right;
+                    var leftChild = brother?.Left;
+                    node = Fix(node, brother, rightChild, leftChild, RightRotate, LeftRotate);
+                }
+            }
+
+            if (nullNode.Parent != null)
+            {
+                DeletingWithoutChildren(nullNode, out _);
+            }
+            node.Color = NodeColor.Black;
+            _root.Color = NodeColor.Black;
+        }
+
+        private TreeNode<TKey> Fix(TreeNode<TKey> node,
+                                   TreeNode<TKey> brother,
+                                   TreeNode<TKey> firstNephew,
+                                   TreeNode<TKey> secondNephew,
+                                   Action<TreeNode<TKey>> firstRotate,
+                                   Action<TreeNode<TKey>> secondRotate)
+        {
+            switch (brother.Color)
+            {
+                case NodeColor.Red:
+                    node.Parent.Color = NodeColor.Red;
+                    brother.Color = NodeColor.Black;
+                    firstRotate(node.Parent);
+                    return node;
+                case NodeColor.Black when ChildrenIsBlack(brother):
+                    brother.Color = NodeColor.Red;
+                    return node.Parent;
+                case NodeColor.Black when ChildIsRed(firstNephew, secondNephew):
+                    (brother.Color, firstNephew.Color) = (firstNephew.Color, brother.Color);
+                    secondRotate(brother);
+                    return node;
+                case NodeColor.Black:
+                {
+                    if (secondNephew?.Color == NodeColor.Red)
+                    {
+                        (brother.Color, node.Parent.Color) = (node.Parent.Color, brother.Color);
+                        secondNephew.Color = NodeColor.Black;
+                        firstRotate(node.Parent);
+                    }
+                    break;
+                }
+            }
+            return _root;
+        }
+
+        private bool ChildIsRed(TreeNode<TKey> firstChild, TreeNode<TKey> secondChild)
+        {
+            return (secondChild == null || secondChild.Color == NodeColor.Black) &&
+                   firstChild?.Color == NodeColor.Red;
+        }
+
+        private static bool ChildrenIsBlack(TreeNode<TKey> node)
+        {
+            return node.Left == null &&
+                   node.Right == null ||
+                   node.Left?.Color == NodeColor.Black &&
+                   node.Right?.Color == NodeColor.Black;
+        }
+
+        private TreeNode<TKey> GetBrother(TreeNode<TKey> node)
+        {
+            if (node?.Parent != null)
+            {
+                return node.Parent.Right == node
+                           ? node.Parent.Left
+                           : node.Parent.Right;
+            }
+            return null;
+        }
+
+        private int GetCountChildren(TreeNode<TKey> node)
+        {
+            var count = node.Left == null ? 0 : 1;
+            if (node.Right != null)
+            {
+                count++;
+            }
+            return count;
         }
 
         private void RightRotate(TreeNode<TKey> node)
         {
             var left = node.Left;
-            var leftRight = node.Left.Right;
+            var leftRight = left.Right;
             left.Parent = node.Parent;
-            if (node.Parent != null && node.Parent.Left == node)
-            {
-                node.Parent.Left = left;
-            }
-            else if (node.Parent != null)
-            {
-                node.Parent.Right = left;
-            }
+            Change(node.Parent, node, left);
             if (_root == node)
             {
                 _root = left;
@@ -266,14 +429,7 @@ namespace RBTreeLab
             var right = node.Right;
             var rightLeft = right.Left;
             right.Parent = node.Parent;
-            if (node.Parent != null && node.Parent.Left == node)
-            {
-                node.Parent.Left = right;
-            }
-            else if (node.Parent != null)
-            {
-                node.Parent.Right = right;
-            }
+            Change(node.Parent, node, right);
             if (_root == node)
             {
                 _root = right;
@@ -290,14 +446,12 @@ namespace RBTreeLab
         private TreeNode<TKey> Search(TKey key)
         {
             var current = _root;
-            
             while (current != null && current.Key.CompareTo(key) != 0)
             {
                 current = current.Key.CompareTo(key) > 0
                               ? current.Left
                               : current.Right;
             }
-
             return current;
         }
 
@@ -308,20 +462,25 @@ namespace RBTreeLab
 
         public IEnumerator<Tuple<TKey, NodeColor>> GetEnumerator()
         {
-            return GetItemsRecursively(_root).Select(node => Tuple.Create(node.Key, node.Color)).GetEnumerator();
+            return GetItemsRecursively(_root)
+                  .Select(node => Tuple.Create(node.Key, node.Color))
+                  .GetEnumerator();
         }
 
         private static IEnumerable<TreeNode<TKey>> GetItemsRecursively(TreeNode<TKey> current)
         {
-            if (current.Left != null)
+            if (current?.Left != null)
             {
                 foreach (var node in GetItemsRecursively(current.Left))
                 {
                     yield return node;
                 }
             }
-            yield return current;
-            if (current.Right != null)
+            if (current != null)
+            {
+                yield return current;
+            }
+            if (current?.Right != null)
             {
                 foreach (var node in GetItemsRecursively(current.Right))
                 {

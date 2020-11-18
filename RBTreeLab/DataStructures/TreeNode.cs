@@ -1,4 +1,4 @@
-namespace RBTreeLab
+namespace RBTreeLab.DataStructures
 {
     public class TreeNode<T>
     {

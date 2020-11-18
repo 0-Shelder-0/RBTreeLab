@@ -1,17 +1,20 @@
 using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using RBTreeLab.Interfaces;
 
 namespace RBTreeLab
 {
     public class Interpreter : IInterpreter<int>
     {
-        public void Run(IRedBlackTree<int> redBlackTree)
+        public void Run(IRedBlackTree<int> redBlackTree, Stream input, Stream output)
         {
             while (true)
             {
-                Console.WriteLine();
-                var command = Console.ReadLine();
-                var items = command.Split(' ');
+                output.StreamWriteLine();
+                var command = GetInput(input);
+                var items = command.Result.Split(' ');
                 var commandNumber = Convert.ToInt32(items[0]);
                 switch (commandNumber)
                 {
@@ -20,27 +23,34 @@ namespace RBTreeLab
                         redBlackTree.PrintTree();
                         break;
                     case 2:
-                        DeleteKey(items[1], redBlackTree);
+                        DeleteKey(redBlackTree, items[1], output);
                         break;
                     case 3:
                     case 6:
                     case 7:
-                        DoFindCommands(items[1], commandNumber, redBlackTree);
+                        DoFindCommands(redBlackTree, commandNumber, items[1], output);
                         break;
                     case 4:
-                        Console.WriteLine(redBlackTree.Min());
+                        output.StreamWriteLine(redBlackTree.Min().ToString());
                         break;
                     case 5:
-                        Console.WriteLine(redBlackTree.Max());
+                        output.StreamWriteLine(redBlackTree.Max().ToString());
                         break;
                     default:
-                        Console.WriteLine("Incorrect input. Try again.");
+                        output.StreamWriteLine("Incorrect input. Try again.");
                         break;
                 }
             }
         }
 
-        private void DeleteKey(string keyItem, IRedBlackTree<int> redBlackTree)
+        private async Task<string> GetInput(Stream input)
+        {
+            var buffer = new byte[100];
+            await input.ReadAsync(buffer);
+            return Encoding.Default.GetString(buffer);
+        }
+
+        private void DeleteKey(IRedBlackTree<int> redBlackTree, string keyItem, Stream output)
         {
             var key = Convert.ToInt32(keyItem);
             if (redBlackTree.Find(key) != null)
@@ -50,11 +60,11 @@ namespace RBTreeLab
             }
             else
             {
-                Console.WriteLine("The tree does not have a vertex with such a key.");
+                output.StreamWriteLine("The tree does not have a node with such a key.");
             }
         }
 
-        private void DoFindCommands(string keyItem, int commandNumber, IRedBlackTree<int> redBlackTree)
+        private void DoFindCommands(IRedBlackTree<int> redBlackTree, int commandNumber, string keyItem, Stream output)
         {
             var key = Convert.ToInt32(keyItem);
             if (redBlackTree.Find(key) != null)
@@ -62,33 +72,23 @@ namespace RBTreeLab
                 switch (commandNumber)
                 {
                     case 3:
-                        Console.WriteLine(redBlackTree.Find(key));
+                        output.StreamWriteLine(redBlackTree.Find(key).ToString());
                         break;
                     case 6:
-                        if (key == redBlackTree.Max())
-                        {
-                            Console.WriteLine("The tree does not have the vertex");
-                        }
-                        else
-                        {
-                            Console.WriteLine(redBlackTree.FindNext(key));
-                        }
+                        output.StreamWriteLine(key == redBlackTree.Max()
+                                                   ? "The tree does not have the node"
+                                                   : redBlackTree.FindNext(key).ToString());
                         break;
                     case 7:
-                        if (key == redBlackTree.Min())
-                        {
-                            Console.WriteLine("The tree does not have the vertex");
-                        }
-                        else
-                        {
-                            Console.WriteLine(redBlackTree.FindPrev(key));
-                        }
+                        output.StreamWriteLine(key == redBlackTree.Min()
+                                                   ? "The tree does not have the node"
+                                                   : redBlackTree.FindPrev(key).ToString());
                         break;
                 }
             }
             else
             {
-                Console.WriteLine("The tree does not have a vertex with such a key.");
+                output.StreamWriteLine("The tree does not have a node with such a key.");
             }
         }
     }

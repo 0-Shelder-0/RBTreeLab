@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using RBTreeLab.Interfaces;
 
-namespace RBTreeLab
+namespace RBTreeLab.DataStructures
 {
     public class RedBlackTree<TKey> : IRedBlackTree<TKey> where TKey : IComparable
     {

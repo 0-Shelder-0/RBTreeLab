@@ -4,6 +4,6 @@ namespace RBTreeLab.Interfaces
 {
     public interface IGenerator
     {
-        List<int> Generate();
+        IEnumerable<int> Generate(int count, int minValue, int maxValue);
     }
 }

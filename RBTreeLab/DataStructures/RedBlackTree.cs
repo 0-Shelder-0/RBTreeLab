@@ -18,6 +18,14 @@ namespace RBTreeLab.DataStructures
             _root = new TreeNode<TKey>(key, NodeColor.Black);
         }
 
+        public RedBlackTree(IEnumerable<TKey> keys)
+        {
+            foreach (var key in keys)
+            {
+                Add(key);
+            }
+        }
+
         public void Add(TKey key)
         {
             if (_root == null)
@@ -61,7 +69,8 @@ namespace RBTreeLab.DataStructures
                        {
                            0 => DeletingWithoutChildren(current, out nullNode),
                            1 => DeletingWithChild(current, out nullNode),
-                           _ => DeletingWithChildren(current, out nullNode)
+                           2 => DeletingWithChildren(current, out nullNode),
+                           _ => throw new Exception()
                        };
             if (nullNode != null)
             {
@@ -69,9 +78,14 @@ namespace RBTreeLab.DataStructures
             }
         }
 
-        public NodeColor? Find(TKey key)
+        public NodeColor? GetColor(TKey key)
         {
             return Search(key)?.Color;
+        }
+
+        public bool Contains(TKey key)
+        {
+            return Search(key) != null;
         }
 
         public TKey Min()
@@ -100,39 +114,31 @@ namespace RBTreeLab.DataStructures
 
         public TKey FindNext(TKey key)
         {
-            if (key.CompareTo(Max()) == 0)
+            if (!Contains(key))
             {
-                throw new InvalidOperationException($"The current key: {key} is the max!");
+                throw new KeyNotFoundException("This key not found!");
             }
-
             var current = Search(key);
-            var right = current.Right;
-            var node = new TreeNode<TKey>();
-            if (right == null)
+            var next = FindNextNode(current);
+            if (next == null)
             {
-                node = current.Parent;
-                while (node.Key.CompareTo(current.Key) < 0)
-                {
-                    node = node.Parent;
-                }
-                return node.Key;
+                throw new ArgumentException($"The current key: {key} is the max!");
             }
-            while (right != null)
-            {
-                node = right;
-                right = right.Left;
-            }
-            return node.Key;
+            return next.Key;
         }
 
         public TKey FindPrev(TKey key)
         {
+            if (!Contains(key))
+            {
+                throw new KeyNotFoundException($"This key not found: {key}");
+            }
             if (key.CompareTo(Min()) == 0)
             {
-                throw new InvalidOperationException($"The current key: {key} is the min!");
+                throw new ArgumentException($"The current key: {key} is the min!");
             }
-
             var current = Search(key);
+
             var left = current.Left;
             var node = new TreeNode<TKey>();
             if (left == null)
@@ -257,30 +263,29 @@ namespace RBTreeLab.DataStructures
             nullNode = null;
             if (node == _root)
             {
-                _root = null;
-                return null;
+                return _root = null;
             }
             if (node.Color == NodeColor.Black && !node.IsNull)
             {
                 var current = node;
                 node = new TreeNode<TKey> {Parent = node.Parent};
-                Change(parent, current, node);
+                ReplaceChild(parent, current, node);
                 nullNode = node;
                 return node;
             }
-            Change(parent, node, null);
+            ReplaceChild(parent, node, null);
             node.Parent = null;
 
             return node;
         }
 
-        private void Change(TreeNode<TKey> parent, TreeNode<TKey> current, TreeNode<TKey> node)
+        private void ReplaceChild(TreeNode<TKey> parent, TreeNode<TKey> current, TreeNode<TKey> node)
         {
             if (parent?.Left == current)
             {
                 parent.Left = node;
             }
-            else if (parent?.Right != null)
+            else if (parent?.Right == current)
             {
                 parent.Right = node;
             }
@@ -297,14 +302,13 @@ namespace RBTreeLab.DataStructures
 
         private TreeNode<TKey> DeletingWithChildren(TreeNode<TKey> node, out TreeNode<TKey> nullNode)
         {
-            var next = node.Key.CompareTo(Max()) == 0 ? null : Search(FindNext(node.Key));
+            var next = FindNextNode(node);
             (node.Key, next.Key) = (next.Key, node.Key);
             var countChildren = GetCountChildren(next);
             nullNode = null;
-            node = countChildren == 0
+            return countChildren == 0
                        ? DeletingWithoutChildren(next, out nullNode)
                        : DeletingWithChild(next, out nullNode);
-            return node;
         }
 
         private void FixDeleting(TreeNode<TKey> node, TreeNode<TKey> nullNode)
@@ -410,7 +414,7 @@ namespace RBTreeLab.DataStructures
             var left = node.Left;
             var leftRight = left.Right;
             left.Parent = node.Parent;
-            Change(node.Parent, node, left);
+            ReplaceChild(node.Parent, node, left);
             if (_root == node)
             {
                 _root = left;
@@ -429,7 +433,7 @@ namespace RBTreeLab.DataStructures
             var right = node.Right;
             var rightLeft = right.Left;
             right.Parent = node.Parent;
-            Change(node.Parent, node, right);
+            ReplaceChild(node.Parent, node, right);
             if (_root == node)
             {
                 _root = right;
@@ -441,6 +445,31 @@ namespace RBTreeLab.DataStructures
             {
                 rightLeft.Parent = node;
             }
+        }
+
+        private TreeNode<TKey> FindNextNode(TreeNode<TKey> current)
+        {
+            if (current == null)
+            {
+                return null;
+            }
+            var right = current.Right;
+            var node = new TreeNode<TKey>();
+            if (right == null)
+            {
+                node = current.Parent;
+                while (node.Key.CompareTo(current.Key) < 0)
+                {
+                    node = node.Parent;
+                }
+                return node;
+            }
+            while (right != null)
+            {
+                node = right;
+                right = right.Left;
+            }
+            return node;
         }
 
         private TreeNode<TKey> Search(TKey key)

@@ -53,7 +53,7 @@ namespace RBTreeLab
         private void DeleteKey(IRedBlackTree<int> redBlackTree, string keyItem, Stream output)
         {
             var key = Convert.ToInt32(keyItem);
-            if (redBlackTree.Find(key) != null)
+            if (redBlackTree.GetColor(key) != null)
             {
                 redBlackTree.Delete(Convert.ToInt32(keyItem));
                 redBlackTree.PrintTree();
@@ -67,12 +67,12 @@ namespace RBTreeLab
         private void DoFindCommands(IRedBlackTree<int> redBlackTree, int commandNumber, string keyItem, Stream output)
         {
             var key = Convert.ToInt32(keyItem);
-            if (redBlackTree.Find(key) != null)
+            if (redBlackTree.GetColor(key) != null)
             {
                 switch (commandNumber)
                 {
                     case 3:
-                        output.StreamWriteLine(redBlackTree.Find(key).ToString());
+                        output.StreamWriteLine(redBlackTree.GetColor(key).ToString());
                         break;
                     case 6:
                         output.StreamWriteLine(key == redBlackTree.Max()

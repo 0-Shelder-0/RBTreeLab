@@ -1,13 +1,13 @@
 namespace RBTreeLab.DataStructures
 {
-    public class TreeNode<T>
+    public class TreeNode<TKey>
     {
         public NodeColor Color;
-        public T Key { get; set; }
+        public TKey Key { get; set; }
         public bool IsNull { get; }
-        public TreeNode<T> Parent { get; set; }
-        public TreeNode<T> Left { get; set; }
-        public TreeNode<T> Right { get; set; }
+        public TreeNode<TKey> Parent { get; set; }
+        public TreeNode<TKey> Left { get; set; }
+        public TreeNode<TKey> Right { get; set; }
 
         public TreeNode()
         {
@@ -15,7 +15,7 @@ namespace RBTreeLab.DataStructures
             IsNull = true;
         }
 
-        public TreeNode(T key, NodeColor color)
+        public TreeNode(TKey key, NodeColor color)
         {
             Key = key;
             Color = color;
